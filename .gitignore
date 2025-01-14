@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pydistutils.cfg
+*.egg
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Ambiente virtual (venv)
+venv/
+
+# Alembic
+alembic/versions/*.pyc
+alembic/versions/*.py~
+
+# VSCode
+.vscode/
+
+# Makefile intermediários
+*.d
+*.o
+
+# Logs
+*.log
+
+# Arquivos temporários
+*.bak
+*.swp
+*.swo
+
+# Arquivo de configuração
+app/core/config.py
