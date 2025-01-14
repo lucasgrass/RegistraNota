@@ -31,6 +31,3 @@ alembic/versions/*.py~
 *.bak
 *.swp
 *.swo
-
-# Arquivo de configuração
-app/core/config.py
