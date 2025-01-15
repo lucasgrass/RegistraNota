@@ -16,3 +16,16 @@ class GetUserByCodigoSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+class LoginRequest(BaseModel):
+    codigo: str
+    senha: str
+
+    class Config:
+        from_attributes = True
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+    class Config:
+        from_attributes = True
