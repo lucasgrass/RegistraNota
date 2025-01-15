@@ -1,39 +1,15 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
+import os
+from dotenv import load_dotenv
 
-from sqlmodel import select
+load_dotenv()
 
-from app import crud
-from app.models import Usuario
-from app.schemas import UserSchema
-from app.core.config import settings
-from app.core.security import get_password_hash
+DB_USER = os.getenv('DB_USER')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
+DB_HOST = os.getenv('DB_HOST')
+DB_PORT = os.getenv('DB_PORT')
+DB_NAME = os.getenv('DB_NAME')
 
-engine = create_async_engine(settings.DATABASE_URL)
-
-
-async def init_db(session: AsyncSession) -> None:
-    result = await session.execute(
-        select(Usuario).where(Usuario.email == settings.FIRST_SUPERUSER_EMAIL)
-    )
-    user = result.scalars().first()
-
-    if not user:
-        user_in = UserSchema(
-            codigo=settings.FIRST_SUPERUSER_CODIGO,
-            email=settings.FIRST_SUPERUSER_EMAIL,
-            senha=get_password_hash(settings.FIRST_SUPERUSER_PASSWORD),
-            is_superuser=True,
-            nome="Admin",
-            caixa=0,
-        )
-
-        await crud.create_user(
-            db=session,  # Passando a sessão corretamente
-            codigo=user_in.codigo,
-            email=user_in.email,
-            nome=user_in.nome,
-            senha=user_in.senha,
-            caixa=user_in.caixa,
-            is_superuser=user_in.is_superuser
-        )
+engine = create_async_engine(
+    f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+)

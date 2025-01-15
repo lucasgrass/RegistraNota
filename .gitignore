@@ -1,33 +1,28 @@
 # Python
-__pycache__/
-*.py[cod]
+*.pyc
 *.pyo
 *.pyd
-*.pydistutils.cfg
-*.egg
-*.egg-info/
-.eggs/
-build/
-dist/
-
-# Ambiente virtual (venv)
+__pycache__
+.env
+.venv
+env/
 venv/
 
-# Alembic
-alembic/versions/*.pyc
-alembic/versions/*.py~
-
-# VSCode
+# VSCode settings
 .vscode/
 
-# Makefile intermediários
-*.d
-*.o
+# PostgreSQL
+*.sql
+*.sqlite3
+db.sqlite3
 
-# Logs
+# Aerich migration files
+migrations/
+
+# FastAPI
 *.log
+*.pid
 
-# Arquivos temporários
-*.bak
-*.swp
-*.swo
+# System files
+.DS_Store
+Thumbs.db

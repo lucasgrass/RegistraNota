@@ -1,50 +1,47 @@
-from datetime import datetime, date
-from sqlalchemy.orm import registry, Mapped, mapped_column, relationship
-from sqlalchemy import func, ForeignKey
+from tortoise import fields
+from tortoise.models import Model
 
-# Defina o Base aqui para utilizar no Alembic
-table_registry = registry()
+class Categoria(Model):
+    numero_categoria = fields.IntField(pk=True)
+    descricao = fields.CharField(max_length=255)
 
-# Se você for usar `Base.metadata` no Alembic, substitua `table_registry` por `Base`:
-Base = table_registry.generate_base()
+    notas: fields.ReverseRelation["Nota"]  # Relacionamento reverso com a tabela Nota
 
-@table_registry.mapped_as_dataclass
-class Usuario:
-    __tablename__ = 'usuarios'
+    class Meta:
+        table = "categorias"
 
-    id: Mapped[int] = mapped_column(init=False, primary_key=True)
-    codigo: Mapped[str] = mapped_column(unique=True, nullable=False)
-    senha: Mapped[str] = mapped_column(nullable=False)
-    nome: Mapped[str] = mapped_column(nullable=False)
-    email: Mapped[str] = mapped_column(unique=True, nullable=False)
-    caixa: Mapped[int]
-    is_superuser: Mapped[bool] = mapped_column(default=False)
-    created_at: Mapped[datetime] = mapped_column(
-        init=False, server_default=func.now()
-    )
+class Nota(Model):
+    id = fields.IntField(pk=True)
+    imagem = fields.CharField(max_length=255)
+    data = fields.DateField()  # ano, mês e dia
+    valor = fields.IntField()
+    codigo_planilha = fields.IntField()
+    created_at = fields.DatetimeField(auto_now_add=True)
 
-@table_registry.mapped_as_dataclass
-class Categoria:
-    __tablename__ = 'categorias'
+    numero_categoria = fields.ForeignKeyField("models.Categoria", related_name="notas", on_delete=fields.CASCADE)
+    codigo_usuario = fields.ForeignKeyField("models.Usuario", related_name="notas", on_delete=fields.CASCADE)
 
-    numero_categoria: Mapped[int] = mapped_column(primary_key=True)
-    descricao: Mapped[str] = mapped_column(nullable=False)
+    class Meta:
+        table = "notas"
 
-@table_registry.mapped_as_dataclass
-class Nota:
-    __tablename__ = 'notas'
+class Usuario(Model):
+    id = fields.IntField(pk=True)
+    codigo = fields.CharField(max_length=100, unique=True)
+    senha = fields.CharField(max_length=255)
+    nome = fields.CharField(max_length=255)
+    email = fields.CharField(max_length=255, unique=True)
+    caixa = fields.IntField()
+    is_superuser = fields.BooleanField(default=False)
+    created_at = fields.DatetimeField(auto_now_add=True)
 
-    id: Mapped[int] = mapped_column(init=False, primary_key=True)
-    imagem: Mapped[str] = mapped_column(nullable=False)
-    data: Mapped[date] = mapped_column(nullable=False) # ano, mês e dia
-    valor: Mapped[int] = mapped_column(nullable=False)
-    codigo_planilha: Mapped[int] = mapped_column(nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        init=False, server_default=func.now()
-    )
+    notas: fields.ReverseRelation["Nota"]  # Relacionamento reverso com a tabela Nota
 
-    numero_categoria: Mapped[int] = mapped_column(ForeignKey('categorias.numero_categoria'), nullable=False)
-    codigo_usuario: Mapped[int] = mapped_column(ForeignKey('usuarios.codigo'), nullable=False)
+    class Meta:
+        table = "usuarios"
 
-    categoria: Mapped["Categoria"] = relationship('Categoria')
-    usuario: Mapped["Usuario"] = relationship('Usuario')
+class Planilha(Model):
+    id = fields.IntField(pk=True)
+    codigo = fields.CharField(max_length=100, unique=True)
+
+    class Meta:
+        table = "planilhas"
