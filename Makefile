@@ -11,6 +11,11 @@ freeze:
 		pip freeze > requirements.txt
 
 
+install_and_migrate:
+		pip install -r requirements.txt
+		aerich migrate
+		aerich upgrade
+
 run:
 		uvicorn $(PROJECT_NAME) --host $(HOST) --port $(PORT) --reload
 
