@@ -1,5 +1,5 @@
 class Settings:
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:140901@localhost:5432/RegistraNota"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:minecraft1@localhost:5432/registranota"
     API_STR: str = "/api/v1"
 
     FIRST_SUPERUSER_EMAIL: str = "grassberaldo@gmail.com"

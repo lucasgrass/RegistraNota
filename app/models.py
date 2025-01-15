@@ -1,13 +1,12 @@
 from datetime import datetime, date
-from sqlalchemy.orm import (
-    registry, Mapped, mapped_column, relationship
-)
-from sqlalchemy import (
-    func, ForeignKey
-)
+from sqlalchemy.orm import registry, Mapped, mapped_column, relationship
+from sqlalchemy import func, ForeignKey
 
-
+# Defina o Base aqui para utilizar no Alembic
 table_registry = registry()
+
+# Se você for usar `Base.metadata` no Alembic, substitua `table_registry` por `Base`:
+Base = table_registry.generate_base()
 
 @table_registry.mapped_as_dataclass
 class Usuario:
