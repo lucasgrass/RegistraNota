@@ -7,6 +7,10 @@ install:
 		pip install -r requirements.txt
 
 
+freeze:
+		pip freeze > requirements.txt
+
+
 run:
 		uvicorn $(PROJECT_NAME) --host $(HOST) --port $(PORT) --reload
 
