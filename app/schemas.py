@@ -1,7 +1,8 @@
 from pydantic import BaseModel
+from datetime import date
 
 class UserSchema(BaseModel):
-    codigo: str
+    codigo_usuario: str
     nome: str
     email: str
     senha: str
@@ -11,14 +12,8 @@ class UserSchema(BaseModel):
     class Config:
         from_attributes = True
 
-class GetUserByCodigoSchema(BaseModel):
-    codigo: str
-
-    class Config:
-        from_attributes = True
-
 class LoginRequest(BaseModel):
-    codigo: str
+    codigo_usuario: str
     senha: str
 
     class Config:
@@ -26,6 +21,42 @@ class LoginRequest(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
+    class Config:
+        from_attributes = True
+
+class GetUserSchema(BaseModel):
+    codigo_usuario: str
+
+    class Config:
+        from_attributes = True
+
+class CategorySchema(BaseModel):
+    codigo_categoria: int
+    descricao: str
+
+    class Config:
+        from_attributes = True
+
+class NoteSchema(BaseModel):
+    imagem: str
+    data: date
+    valor: int
+    codigo_categoria: str
+    codigo_usuario: str
+    codigo_planilha: str
+
+    class Config:
+        from_attributes = True
+
+class UserNotesSchema(BaseModel):
+    codigo_usuario: str
+
+    class Config:
+        from_attributes = True
+
+class SheetSchema(BaseModel):
+    codigo_planilha: str
 
     class Config:
         from_attributes = True
