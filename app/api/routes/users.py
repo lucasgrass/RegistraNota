@@ -89,7 +89,7 @@ async def get_user(request: GetUserSchema):
     try:
         user = await Usuario.get(codigo_usuario=request.codigo_usuario)
 
-        return {"codigo_usuario": user.codigo_usuario, "nome": user.nome, "email": user.email, "caixa": user.caixa}
+        return {"codigo_usuario": user.codigo_usuario, "nome": user.nome, "email": user.email, "caixa": user.caixa, "is_superuser": user.is_superuser}
 
     except DoesNotExist:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Código de usuário não encontrado.")
