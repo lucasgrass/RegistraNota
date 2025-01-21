@@ -13,7 +13,8 @@ class Categoria(Model):
 class Nota(Model):
     id = fields.IntField(pk=True)
     imagem = fields.CharField(max_length=255)
-    data = fields.DateField()  # ano, mês e dia
+    imagem_original = fields.CharField(max_length=255)
+    data = fields.DateField()
     valor = fields.IntField()
     created_at = fields.DatetimeField(auto_now_add=True)
 
