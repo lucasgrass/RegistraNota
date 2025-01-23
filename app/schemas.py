@@ -49,6 +49,18 @@ class NoteSchema(BaseModel):
     class Config:
         from_attributes = True
 
+class SaveNoteSchema(BaseModel):
+    data: str
+    valor: float
+    codigo_categoria: int
+    codigo_usuario: int
+    codigo_planilha: int
+    imagem: str
+    imagem_original: str
+
+    class Config:
+        from_attributes = True
+
 class UserNotesSchema(BaseModel):
     codigo_usuario: str
 

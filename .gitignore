@@ -26,3 +26,6 @@ migrations/
 # System files
 .DS_Store
 Thumbs.db
+
+#GCS
+credentials.json
