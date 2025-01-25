@@ -55,8 +55,8 @@ class SaveNoteSchema(BaseModel):
     codigo_categoria: int
     codigo_usuario: int
     codigo_planilha: int
-    imagem: str
-    imagem_original: str
+    url_image_original: str
+    url_image_scan: str
 
     class Config:
         from_attributes = True
