@@ -10,42 +10,6 @@ from app.services.ocr import execute_ocr
 
 router = APIRouter(prefix="/notes", tags=["notes"])
 
-@router.post("/")
-async def create_note(request: NoteSchema):
-    try:
-        user = await Usuario.get(codigo_usuario=request.codigo_usuario)
-    except DoesNotExist:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
-
-    try:
-        category = await Categoria.get(codigo_categoria=request.codigo_categoria)
-    except DoesNotExist:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
-
-    try:
-        sheet = await Planilha.get(codigo_planilha=request.codigo_planilha)
-    except DoesNotExist:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Planilha não encontrada.")
-
-    new_nota = await Nota.create(
-        imagem=request.imagem,
-        data=request.data,
-        valor=request.valor,
-        codigo_categoria=category,
-        codigo_usuario=user,
-        codigo_planilha=sheet
-    )
-
-    return {
-        "message": "Nota criada com sucesso.",
-        "nota": {
-            "id": new_nota.id,
-            "imagem": new_nota.imagem,
-            "data": new_nota.data,
-            "valor": new_nota.valor
-        }
-    }
-
 @router.post("/last")
 async def get_last_notes(request: UserNotesSchema):
     user = await Usuario.filter(codigo_usuario=request.codigo_usuario).exists()
