@@ -12,8 +12,8 @@ class Categoria(Model):
 
 class Nota(Model):
     id = fields.IntField(pk=True)
-    imagem = fields.CharField(max_length=255)
-    imagem_original = fields.CharField(max_length=255)
+    imagem = fields.CharField(max_length=255) # url_image_original
+    imagem_original = fields.CharField(max_length=255) # url_image_scan
     data = fields.DateField()
     valor = fields.IntField()
     created_at = fields.DatetimeField(auto_now_add=True)

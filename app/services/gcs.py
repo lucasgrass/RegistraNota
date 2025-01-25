@@ -35,16 +35,17 @@ def upload_to_gcs(image: UploadFile):
     return imagem_url
 
 
-def exclude_of_gcs(imagem_url: str):
+def exclude_from_gcs(imagem_url: str):
     client = storage.Client()
-
-    imagem_caminho = imagem_url.split("/")[-1]
-
+    
+    # Extrair o nome do arquivo da URL da imagem
+    imagem_caminho = imagem_url.split("/")[-1]  # Pega a última parte da URL (nome do arquivo)
+    
     bucket = client.get_bucket(BUCKET_NAME)
     blob = bucket.blob(imagem_caminho)
-
+    
     try:
-        blob.delete()
+        blob.delete()  # Exclui a imagem do GCS
         print(f"Imagem {imagem_caminho} excluída com sucesso.")
     except Exception as e:
-        print(f"Erro ao excluir imagem {imagem_caminho}: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao excluir imagem {imagem_caminho}: {str(e)}")
