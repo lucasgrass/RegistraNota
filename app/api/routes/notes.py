@@ -5,12 +5,14 @@ from app.schemas import NoteSchema, UserNotesSchema, SaveNoteSchema
 from app.models import Nota, Usuario, Categoria, Planilha
 from app.services.gcs import upload_to_gcs, exclude_from_gcs
 from app.services.scan import execute_scan
+from datetime import datetime
 
 
 router = APIRouter(prefix="/notes", tags=["notes"])
 
 @router.post("/last")
 async def get_last_notes(request: UserNotesSchema):
+
     user = await Usuario.filter(codigo_usuario=request.codigo_usuario).exists()
 
     if not user:
@@ -21,7 +23,12 @@ async def get_last_notes(request: UserNotesSchema):
     if not last_notes:
         raise HTTPException(status_code=204, detail="Não há notas para esse usuário.")
 
-    return last_notes
+    return {
+        "status": "success",
+        "message": f"Últimas notas de {request.codigo_usuario}",
+        "data": last_notes
+    }
+
 
 @router.post("/count")
 async def count_notes(request: UserNotesSchema):
@@ -39,20 +46,24 @@ async def process_note(
     image: UploadFile,
     codigo_categoria: str = Form(...),
     codigo_usuario: str = Form(...),
-    codigo_planilha: str = Form(...)
+    codigo_planilha: str = Form(...),
 ):
     if image.content_type not in ["image/jpeg", "image/png"]:
         raise HTTPException(status_code=400, detail="Formato de arquivo não suportado.")
 
-    user = await Usuario.filter(codigo_usuario=codigo_usuario).exists()
-    category = await Categoria.filter(codigo_categoria=codigo_categoria).exists()
-    sheet = await Planilha.filter(codigo_planilha=codigo_planilha).exists()
-
-    if not user:
+    try:
+        user = await Usuario.get(codigo_usuario=codigo_usuario)
+    except DoesNotExist:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
-    if not category:
+    
+    try:
+        category = await Categoria.get(codigo_categoria=codigo_categoria)
+    except DoesNotExist:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
-    if not sheet:
+    
+    try:
+        sheet = await Planilha.get(codigo_planilha=codigo_planilha)
+    except DoesNotExist:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Planilha não encontrada.")
 
     url_image_original = upload_to_gcs(image)
@@ -70,17 +81,47 @@ async def process_note(
 
 @router.post("/confirm")
 async def confirm_note(request: SaveNoteSchema):
+
+    try:
+        user = await Usuario.get(codigo_usuario=request.codigo_usuario)
+    except DoesNotExist:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
+    
+    try:
+        category = await Categoria.get(codigo_categoria=request.codigo_categoria)
+    except DoesNotExist:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
+    
+    sheet = await Planilha.filter(codigo_planilha=request.codigo_planilha, codigo_usuario=request.codigo_usuario).first()
+
+    if not sheet:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ão encontrei essa planilha para este usuário.")
+
+    try:
+        data_formatada = datetime.strptime(request.data, "%d/%m/%Y").date()
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Formato de data inválido. Use DD/MM/YYYY.")
+
+    if not request.url_image_original:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="URL da imagem original é obrigatória.")
+
+    if not request.url_image_scan:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="URL da imagem digitalizada é obrigatória.")
+
+    valor_float = float(request.valor.replace(",", "."))
+    valor_centavos = int(valor_float * 100)
+
     note = await Nota.create(
-        data=request.data,
-        valor=request.valor,
-        codigo_categoria=request.codigo_categoria,
-        codigo_usuario=request.codigo_usuario,
-        codigo_planilha=request.codigo_planilha,
-        url_image_original=request.imagem,
-        url_image_scan=request.imagem_original,
+        data=data_formatada,
+        valor=valor_centavos,
+        codigo_categoria=category,
+        codigo_usuario=user,
+        id_planilha=sheet,
+        url_image_original=request.url_image_original,
+        url_image_scan=request.url_image_scan,
     )
 
-    return {"id": nota.id, "message": "Nota salva com sucesso!"}
+    return {"id": note.id, "message": "Nota salva com sucesso!"}
 
 @router.post("/reject")
 async def reject_note(image_urls: list[str]):
@@ -89,8 +130,8 @@ async def reject_note(image_urls: list[str]):
     
     for image_url in image_urls:
         try:
-            exclude_from_gcs(image_url)  # Exclui a imagem do GCS com a URL fornecida
+            exclude_from_gcs(image_url)
         except HTTPException as e:
-            raise e  # Propaga o erro se ocorrer
+            raise e
 
     return {"message": "Imagens rejeitadas e excluídas com sucesso."}
