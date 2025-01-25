@@ -12,15 +12,15 @@ class Categoria(Model):
 
 class Nota(Model):
     id = fields.IntField(pk=True)
-    imagem = fields.CharField(max_length=255) # url_image_original
-    imagem_original = fields.CharField(max_length=255) # url_image_scan
+    url_image_original = fields.CharField(max_length=255) # url_image_original
+    url_image_scan = fields.CharField(max_length=255) # url_image_scan
     data = fields.DateField()
     valor = fields.IntField()
     created_at = fields.DatetimeField(auto_now_add=True)
 
     codigo_categoria = fields.ForeignKeyField("models.Categoria", related_name="notas", on_delete=fields.CASCADE)
     codigo_usuario = fields.ForeignKeyField("models.Usuario", related_name="notas", on_delete=fields.CASCADE)
-    codigo_planilha = fields.ForeignKeyField("models.Planilha", related_name="notas", on_delete=fields.CASCADE)
+    id_planilha = fields.ForeignKeyField("models.Planilha", related_name="notas", on_delete=fields.CASCADE)
 
     class Meta:
         table = "notas"
@@ -40,7 +40,10 @@ class Usuario(Model):
         table = "usuarios"
 
 class Planilha(Model):
-    codigo_planilha = fields.CharField(pk=True, max_length=100)
+    id = fields.IntField(pk=True)
+    codigo_planilha = fields.CharField(max_length=20)
+
+    codigo_usuario = fields.ForeignKeyField("models.Usuario", related_name="planilhas", on_delete=fields.CASCADE)
 
     class Meta:
         table = "planilhas"
