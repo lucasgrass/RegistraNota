@@ -51,10 +51,10 @@ class NoteSchema(BaseModel):
 
 class SaveNoteSchema(BaseModel):
     data: str
-    valor: float
-    codigo_categoria: int
-    codigo_usuario: int
-    codigo_planilha: int
+    valor: str
+    codigo_categoria: str
+    codigo_usuario: str
+    codigo_planilha: str
     url_image_original: str
     url_image_scan: str
 
@@ -69,7 +69,14 @@ class UserNotesSchema(BaseModel):
 
 class SheetSchema(BaseModel):
     access_token: str
+    codigo_usuario: str
     codigo_planilha: str
+
+    class Config:
+        from_attributes = True
+
+class GetSheetSchema(BaseModel):
+    codigo_usuario: str
 
     class Config:
         from_attributes = True
