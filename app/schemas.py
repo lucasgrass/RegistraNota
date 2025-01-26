@@ -69,14 +69,13 @@ class UserNotesSchema(BaseModel):
 
 class SheetSchema(BaseModel):
     access_token: str
-    codigo_usuario: str
     codigo_planilha: str
 
     class Config:
         from_attributes = True
 
 class GetSheetSchema(BaseModel):
-    codigo_usuario: str
+    access_token: str
 
     class Config:
         from_attributes = True

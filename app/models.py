@@ -12,10 +12,11 @@ class Categoria(Model):
 
 class Nota(Model):
     id = fields.IntField(pk=True)
-    url_image_original = fields.CharField(max_length=255) # url_image_original
-    url_image_scan = fields.CharField(max_length=255) # url_image_scan
+    url_image_original = fields.CharField(max_length=255)
+    url_image_scan = fields.CharField(max_length=255)
     data = fields.DateField()
     valor = fields.IntField()
+    descricao = fields.CharField(max_length=255)
     created_at = fields.DatetimeField(auto_now_add=True)
 
     codigo_categoria = fields.ForeignKeyField("models.Categoria", related_name="notas", on_delete=fields.CASCADE)

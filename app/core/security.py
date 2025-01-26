@@ -1,12 +1,16 @@
 from typing import Any, Union
-
 from datetime import datetime, timedelta
+import pytz
 from jose import JWTError, jwt
-from app.models import Usuario
+from app.models import Usuario, RefreshToken
 from passlib.context import CryptContext
+from fastapi import HTTPException, status
+from tortoise.exceptions import DoesNotExist
 from dotenv import load_dotenv
 import os
 
+# Definindo o fuso horário de São Paulo
+saopaulo_tz = pytz.timezone("America/Sao_Paulo")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -26,53 +30,49 @@ REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS"))
 def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(saopaulo_tz) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(saopaulo_tz) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 def create_refresh_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    expire = datetime.now(saopaulo_tz) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-async def validate_token(token: str):
+async def validate_access_token(access_token: str):
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        
-        codigo_usuario: str = payload.get("codigo_usuario")
+        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+
+        codigo_usuario: str = payload.get("sub")
         if codigo_usuario is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token inválido: código de usuário não encontrado.",
             )
 
-        db_token = await RefreshToken.get(refresh_token=token)
-        if db_token.is_revoked:
+        exp: int = payload.get("exp")
+        if exp is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token revogado.",
+                detail="Token inválido: data de expiração não encontrada.",
             )
-        
-        # Verifica se o token expirou
-        if db_token.expires_at < datetime.utcnow():
+
+        current_timestamp = datetime.now(saopaulo_tz).timestamp()  # timestamp em segundos
+        if exp < current_timestamp:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token expirado.",
             )
-        
+
         return codigo_usuario
+
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Não foi possível validar o token.",
-        )
-    except RefreshToken.DoesNotExist:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token não encontrado no banco de dados.",
         )
