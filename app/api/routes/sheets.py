@@ -3,6 +3,7 @@ from tortoise.exceptions import DoesNotExist
 
 from app.schemas import SheetSchema
 from app.models import Planilha
+from app.core.security import validate_token
 
 router = APIRouter(prefix="/sheets", tags=["sheets"])
 

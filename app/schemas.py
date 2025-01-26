@@ -26,7 +26,7 @@ class RefreshTokenRequest(BaseModel):
         from_attributes = True
 
 class GetUserSchema(BaseModel):
-    codigo_usuario: str
+    access_token: str
 
     class Config:
         from_attributes = True
@@ -68,6 +68,7 @@ class UserNotesSchema(BaseModel):
         from_attributes = True
 
 class SheetSchema(BaseModel):
+    access_token: str
     codigo_planilha: str
 
     class Config:

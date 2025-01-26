@@ -39,3 +39,40 @@ def create_refresh_token(data: dict):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+async def validate_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        codigo_usuario: str = payload.get("codigo_usuario")
+        if codigo_usuario is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token inválido: código de usuário não encontrado.",
+            )
+
+        db_token = await RefreshToken.get(refresh_token=token)
+        if db_token.is_revoked:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token revogado.",
+            )
+        
+        # Verifica se o token expirou
+        if db_token.expires_at < datetime.utcnow():
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token expirado.",
+            )
+        
+        return codigo_usuario
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Não foi possível validar o token.",
+        )
+    except RefreshToken.DoesNotExist:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token não encontrado no banco de dados.",
+        )

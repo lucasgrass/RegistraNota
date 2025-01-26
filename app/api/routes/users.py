@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from app.schemas import UserSchema, LoginRequest, RefreshTokenRequest, GetUserSchema
 from app.models import Usuario, RefreshToken
-from app.core.security import get_password_hash, verify_password, create_access_token, create_refresh_token
+from app.core.security import get_password_hash, verify_password, create_access_token, create_refresh_token, validate_token
 from tortoise.exceptions import DoesNotExist
 from datetime import datetime, timedelta, timezone
 
@@ -87,6 +87,8 @@ async def refresh_token(request: RefreshTokenRequest):
 @router.post("/getUser")
 async def get_user(request: GetUserSchema):
     try:
+        codigo_usuario = await validate_token(request.token)
+        
         user = await Usuario.get(codigo_usuario=request.codigo_usuario)
 
         return {"codigo_usuario": user.codigo_usuario, "nome": user.nome, "email": user.email, "caixa": user.caixa, "is_superuser": user.is_superuser}
