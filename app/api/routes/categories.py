@@ -3,11 +3,15 @@ from tortoise.exceptions import DoesNotExist
 
 from app.schemas import CategorySchema
 from app.models import Categoria
+from app.core.security import validate_access_token
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 
 @router.post("/")
 async def create_category(request: CategorySchema):
+
+    _ = await validate_access_token(request.access_token)
+
     category = await Categoria.filter(codigo_categoria=request.codigo_categoria).first()
     if category:
         raise HTTPException(

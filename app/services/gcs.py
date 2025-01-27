@@ -3,6 +3,7 @@ from fastapi import UploadFile
 import uuid
 import os
 from dotenv import load_dotenv
+from fastapi import HTTPException, status
 
 load_dotenv()
 
@@ -48,4 +49,7 @@ def exclude_from_gcs(imagem_url: str):
         blob.delete()  # Exclui a imagem do GCS
         print(f"Imagem {imagem_caminho} excluída com sucesso.")
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao excluir imagem {imagem_caminho}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao excluir imagem {imagem_caminho}: {str(e)}"
+        )

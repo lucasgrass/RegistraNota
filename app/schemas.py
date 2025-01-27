@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import date
+from typing import List
 
 class UserSchema(BaseModel):
     codigo_usuario: str
@@ -32,6 +33,7 @@ class GetUserSchema(BaseModel):
         from_attributes = True
 
 class CategorySchema(BaseModel):
+    access_token: str
     codigo_categoria: int
     descricao: str
 
@@ -50,10 +52,11 @@ class NoteSchema(BaseModel):
         from_attributes = True
 
 class SaveNoteSchema(BaseModel):
+    access_token: str
     data: str
     valor: str
+    descricao: str
     codigo_categoria: str
-    codigo_usuario: str
     codigo_planilha: str
     url_image_original: str
     url_image_scan: str
@@ -61,8 +64,15 @@ class SaveNoteSchema(BaseModel):
     class Config:
         from_attributes = True
 
+class RejectNoteSchema(BaseModel):
+    access_token: str
+    image_urls: List[str]
+
+    class Config:
+        from_attributes = True
+
 class UserNotesSchema(BaseModel):
-    codigo_usuario: str
+    access_token: str
 
     class Config:
         from_attributes = True
