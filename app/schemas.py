@@ -32,6 +32,14 @@ class GetUserSchema(BaseModel):
     class Config:
         from_attributes = True
 
+class AddCashRegisterSchema(BaseModel):
+    access_token: str
+    add_codigo_usuario: str
+    adicionar_caixa: str
+
+    class Config:
+        from_attributes = True
+
 class CategorySchema(BaseModel):
     access_token: str
     codigo_categoria: int

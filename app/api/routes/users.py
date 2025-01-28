@@ -1,8 +1,11 @@
 from fastapi import APIRouter, HTTPException, status
-from app.schemas import UserSchema, LoginRequest, RefreshTokenRequest, GetUserSchema
+from tortoise.exceptions import DoesNotExist
+from tortoise.transactions import atomic
+
+from app.schemas import UserSchema, LoginRequest, RefreshTokenRequest, GetUserSchema, AddCashRegisterSchema
 from app.models import Usuario, RefreshToken
 from app.core.security import get_password_hash, verify_password, create_access_token, create_refresh_token, validate_access_token
-from tortoise.exceptions import DoesNotExist
+
 from datetime import datetime, timedelta, timezone
 import pytz
 
@@ -106,3 +109,30 @@ async def get_user(request: GetUserSchema):
 
     except DoesNotExist:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Código de usuário não encontrado.")
+
+@router.post("/CashRegister")
+@atomic()
+async def add_cash_register(request: AddCashRegisterSchema):
+
+    codigo_usuario = await validate_access_token(request.access_token)
+
+    user = await Usuario.get(codigo_usuario=codigo_usuario)
+
+    if not user.is_superuser:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Apenas administradores podem mudar o caixa de outra pessoa.")
+
+    try:
+        add_user = await Usuario.get(codigo_usuario=request.add_codigo_usuario)
+    except DoesNotExist:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Código de usuário não encontrado.")
+
+    try:
+        valor_float = float(request.adicionar_caixa.replace(",", "."))
+        valor_centavos = int(valor_float * 100)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Valor inválido.")
+
+    add_user.caixa += valor_centavos
+    await add_user.save()
+
+    return {"caixa": add_user.caixa, "message": "Valor adicionado ao caixa com sucesso!"}

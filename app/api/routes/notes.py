@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, UploadFile, Form
 from tortoise.exceptions import DoesNotExist
+from tortoise.transactions import atomic
 
 from app.core.security import validate_access_token
 from app.schemas import NoteSchema, UserNotesSchema, SaveNoteSchema, RejectNoteSchema
@@ -89,6 +90,7 @@ async def process_note(
     }
 
 @router.post("/confirm")
+@atomic()
 async def confirm_note(request: SaveNoteSchema):
 
     codigo_usuario = await validate_access_token(request.access_token)
@@ -104,9 +106,8 @@ async def confirm_note(request: SaveNoteSchema):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
     
     sheet = await Planilha.filter(codigo_planilha=request.codigo_planilha, codigo_usuario=codigo_usuario).first()
-
     if not sheet:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ão encontrei essa planilha para este usuário.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Não encontrei essa planilha para este usuário.")
 
     try:
         data_formatada = datetime.strptime(request.data, "%d/%m/%Y").date()
@@ -119,8 +120,15 @@ async def confirm_note(request: SaveNoteSchema):
     if not request.url_image_scan:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="URL da imagem digitalizada é obrigatória.")
 
-    valor_float = float(request.valor.replace(",", "."))
-    valor_centavos = int(valor_float * 100)
+    try:
+        valor_float = float(request.valor.replace(",", "."))
+        valor_centavos = int(valor_float * 100)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Valor inválido.")
+
+    caixa_atual = user.caixa
+    if caixa_atual < valor_centavos:
+        raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail="Saldo insuficiente.")
 
     note = await Nota.create(
         data=data_formatada,
@@ -132,6 +140,9 @@ async def confirm_note(request: SaveNoteSchema):
         url_image_original=request.url_image_original,
         url_image_scan=request.url_image_scan,
     )
+
+    user.caixa -= valor_centavos
+    await user.save()
 
     return {"id": note.id, "message": "Nota salva com sucesso!"}
 
