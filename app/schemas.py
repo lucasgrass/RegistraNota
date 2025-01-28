@@ -85,6 +85,13 @@ class UserNotesSchema(BaseModel):
     class Config:
         from_attributes = True
 
+class NotesBySheetSchema(BaseModel):
+    access_token: str
+    codigo_planilha: str
+
+    class Config:
+        from_attributes = True
+
 class SheetSchema(BaseModel):
     access_token: str
     codigo_planilha: str

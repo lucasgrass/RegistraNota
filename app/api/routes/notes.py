@@ -3,7 +3,7 @@ from tortoise.exceptions import DoesNotExist
 from tortoise.transactions import atomic
 
 from app.core.security import validate_access_token
-from app.schemas import NoteSchema, UserNotesSchema, SaveNoteSchema, RejectNoteSchema
+from app.schemas import NoteSchema, UserNotesSchema, SaveNoteSchema, RejectNoteSchema, NotesBySheetSchema
 from app.models import Nota, Usuario, Categoria, Planilha
 from app.services.gcs import upload_to_gcs, exclude_from_gcs
 from app.services.scan import execute_scan
@@ -28,9 +28,30 @@ async def get_last_notes(request: UserNotesSchema):
         raise HTTPException(status_code=204, detail="Não há notas para esse usuário.")
 
     return {
-        "data": last_notes
+        "notes": last_notes
     }
 
+@router.post("/history")
+async def get_notes_by_sheet(request: NotesBySheetSchema):
+    codigo_usuario = await validate_access_token(request.access_token)
+
+    user_exists = await Usuario.filter(codigo_usuario=codigo_usuario).exists()
+    if not user_exists:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
+
+    sheet_exists = await Planilha.filter(codigo_planilha=request.codigo_planilha, codigo_usuario=codigo_usuario).exists()
+    if not sheet_exists:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Planilha não encontrada para este usuário.")
+
+    notes = await Nota.filter(codigo_usuario=codigo_usuario, codigo_planilha=request.codigo_planilha).order_by("-created_at")
+
+    if not notes:
+        raise HTTPException(status_code=204, detail="Nenhuma nota encontrada para esta planilha.")
+
+    return {
+        "sheet": request.codigo_planilha,
+        "data": notes
+    }
 
 @router.post("/count")
 async def count_notes(request: UserNotesSchema):
