@@ -21,7 +21,7 @@ class Nota(Model):
 
     codigo_categoria = fields.ForeignKeyField("models.Categoria", related_name="notas", on_delete=fields.CASCADE)
     codigo_usuario = fields.ForeignKeyField("models.Usuario", related_name="notas", on_delete=fields.CASCADE)
-    id_planilha = fields.ForeignKeyField("models.Planilha", related_name="notas", on_delete=fields.CASCADE)
+    planilha = fields.ForeignKeyField("models.Planilha", related_name="notas", on_delete=fields.CASCADE)
 
     class Meta:
         table = "notas"

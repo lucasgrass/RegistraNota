@@ -24,5 +24,5 @@ TORTOISE_ORM = {
         },
     },
     "use_tz": True,
-    "timezone": "UTC",
+    "timezone": "America/Sao_Paulo",
 }
