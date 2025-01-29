@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import date
-from typing import List
+from typing import List, Optional
 
 class UserSchema(BaseModel):
     codigo_usuario: str
@@ -85,9 +85,10 @@ class UserNotesSchema(BaseModel):
     class Config:
         from_attributes = True
 
-class NotesBySheetSchema(BaseModel):
+class FilterNotesSchema(BaseModel):
     access_token: str
     codigo_planilha: str
+    periodo: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -101,6 +102,13 @@ class SheetSchema(BaseModel):
 
 class GetSheetSchema(BaseModel):
     access_token: str
+
+    class Config:
+        from_attributes = True
+
+class ReportSchema(BaseModel):
+    access_token: str
+    codigo_planilha: str
 
     class Config:
         from_attributes = True

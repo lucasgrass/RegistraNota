@@ -3,12 +3,11 @@ from tortoise.exceptions import DoesNotExist
 from tortoise.transactions import atomic
 
 from app.core.security import validate_access_token
-from app.schemas import NoteSchema, UserNotesSchema, SaveNoteSchema, RejectNoteSchema, NotesBySheetSchema
+from app.schemas import NoteSchema, UserNotesSchema, SaveNoteSchema, RejectNoteSchema, FilterNotesSchema
 from app.models import Nota, Usuario, Categoria, Planilha
 from app.services.gcs import upload_to_gcs, exclude_from_gcs
 from app.services.scan import execute_scan
-from datetime import datetime
-
+from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/notes", tags=["notes"])
 
@@ -32,25 +31,48 @@ async def get_last_notes(request: UserNotesSchema):
     }
 
 @router.post("/history")
-async def get_notes_by_sheet(request: NotesBySheetSchema):
+async def filter_notes(request: FilterNotesSchema):
     codigo_usuario = await validate_access_token(request.access_token)
 
-    user_exists = await Usuario.filter(codigo_usuario=codigo_usuario).exists()
-    if not user_exists:
+    user = await Usuario.filter(codigo_usuario=codigo_usuario).exists()
+    if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
 
-    sheet_exists = await Planilha.filter(codigo_planilha=request.codigo_planilha, codigo_usuario=codigo_usuario).exists()
-    if not sheet_exists:
+    try:
+        sheet = await Planilha.get(codigo_planilha=request.codigo_planilha, codigo_usuario=codigo_usuario)
+    except DoesNotExist:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Planilha não encontrada para este usuário.")
 
-    notes = await Nota.filter(codigo_usuario=codigo_usuario, codigo_planilha=request.codigo_planilha).order_by("-created_at")
+    filters = {
+        "codigo_usuario": codigo_usuario,
+        "planilha_id": sheet.id
+    }
+
+    if request.periodo == "ultimos_3_dias":
+        start_date = datetime.now() - timedelta(days=1)
+        filters["created_at__gte"] = start_date
+    elif request.periodo == "ultimos_7_dias":
+        start_date = datetime.now() - timedelta(days=7)
+        filters["created_at__gte"] = start_date
+    elif request.periodo == "ultimos_14_dias":
+        start_date = datetime.now() - timedelta(days=14)
+        filters["created_at__gte"] = start_date
+    elif request.periodo == "ultimo_mes":
+        start_date = datetime.now() - timedelta(days=30)
+        filters["created_at__gte"] = start_date
+    elif request.periodo == "ultimos_3_meses":
+        start_date = datetime.now() - timedelta(days=90)
+        filters["created_at__gte"] = start_date
+
+    notes = await Nota.filter(**filters).order_by("-created_at")
 
     if not notes:
-        raise HTTPException(status_code=204, detail="Nenhuma nota encontrada para esta planilha.")
+        raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="Nenhuma nota encontrada para este filtro.")
 
     return {
-        "sheet": request.codigo_planilha,
-        "data": notes
+        "sheet_id": sheet.id,
+        "sheet_code": request.codigo_planilha,
+        "notes": notes
     }
 
 @router.post("/count")
