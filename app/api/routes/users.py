@@ -113,7 +113,7 @@ async def get_user(request: GetUserSchema):
         user = await Usuario.get(codigo_usuario=codigo_usuario)
 
         valor_reais = user.caixa / 100
-        caixa_formatado = f"R$ {valor_reais:,.2f}".replace(",", ".").replace(".", ",", 1)
+        caixa_formatado = f"{valor_reais:,.2f}".replace(",", ".").replace(".", ",", 1)
 
         return {"codigo_usuario": user.codigo_usuario, "nome": user.nome, "email": user.email, "caixa": caixa_formatado, "is_superuser": user.is_superuser}
 
