@@ -7,7 +7,7 @@ class UserSchema(BaseModel):
     nome: str
     email: str
     senha: str
-    caixa: int
+    caixa: str
     is_superuser: bool = False
 
     class Config:

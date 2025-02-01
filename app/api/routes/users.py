@@ -30,12 +30,19 @@ async def create_user(request: UserSchema):
         )
 
     hashed_password = get_password_hash(request.senha)
+
+    try:
+        caixa_float = float(request.caixa.replace(",", "."))
+        caixa_centavos = int(caixa_float * 100)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Valor do caixa inválido.")
+
     user = await Usuario.create(
         codigo_usuario=request.codigo_usuario,
         email=request.email,
         nome=request.nome,
         is_superuser=request.is_superuser,
-        caixa=request.caixa,
+        caixa=caixa_centavos,
         senha=hashed_password
     )
 
@@ -105,7 +112,10 @@ async def get_user(request: GetUserSchema):
         
         user = await Usuario.get(codigo_usuario=codigo_usuario)
 
-        return {"codigo_usuario": user.codigo_usuario, "nome": user.nome, "email": user.email, "caixa": user.caixa, "is_superuser": user.is_superuser}
+        valor_reais = user.caixa / 100
+        caixa_formatado = f"R$ {valor_reais:,.2f}".replace(",", ".").replace(".", ",", 1)
+
+        return {"codigo_usuario": user.codigo_usuario, "nome": user.nome, "email": user.email, "caixa": caixa_formatado, "is_superuser": user.is_superuser}
 
     except DoesNotExist:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Código de usuário não encontrado.")

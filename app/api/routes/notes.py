@@ -34,8 +34,8 @@ async def get_last_notes(request: UserNotesSchema):
 async def filter_notes(request: FilterNotesSchema):
     codigo_usuario = await validate_access_token(request.access_token)
 
-    user = await Usuario.filter(codigo_usuario=codigo_usuario).exists()
-    if not user:
+    user_exists = await Usuario.filter(codigo_usuario=codigo_usuario).exists()
+    if not user_exists:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
 
     try:
@@ -48,31 +48,30 @@ async def filter_notes(request: FilterNotesSchema):
         "planilha_id": sheet.id
     }
 
-    if request.periodo == "ultimos_3_dias":
-        start_date = datetime.now() - timedelta(days=1)
-        filters["created_at__gte"] = start_date
-    elif request.periodo == "ultimos_7_dias":
-        start_date = datetime.now() - timedelta(days=7)
-        filters["created_at__gte"] = start_date
-    elif request.periodo == "ultimos_14_dias":
-        start_date = datetime.now() - timedelta(days=14)
-        filters["created_at__gte"] = start_date
-    elif request.periodo == "ultimo_mes":
-        start_date = datetime.now() - timedelta(days=30)
-        filters["created_at__gte"] = start_date
-    elif request.periodo == "ultimos_3_meses":
-        start_date = datetime.now() - timedelta(days=90)
+    days = {
+        "ultimos_3_dias": 3,
+        "ultimos_7_dias": 7,
+        "ultimos_14_dias": 14,
+        "ultimo_mes": 30,
+        "ultimos_3_meses": 90
+    }
+    
+    if request.periodo:
+        if request.periodo not in days:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Período inválido: {request.periodo}. Opções válidas: {', '.join(days.keys())}."
+            )
+
+        start_date = datetime.utcnow() - timedelta(days=days[request.periodo])
         filters["created_at__gte"] = start_date
 
     notes = await Nota.filter(**filters).order_by("-created_at")
 
-    if not notes:
-        raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="Nenhuma nota encontrada para este filtro.")
-
     return {
         "sheet_id": sheet.id,
-        "sheet_code": request.codigo_planilha,
-        "notes": notes
+        "codigo_planilha": request.codigo_planilha,
+        "notes": notes or []
     }
 
 @router.post("/count")
@@ -149,6 +148,7 @@ async def confirm_note(request: SaveNoteSchema):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
     
     sheet = await Planilha.filter(codigo_planilha=request.codigo_planilha, codigo_usuario=codigo_usuario).first()
+
     if not sheet:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Não encontrei essa planilha para este usuário.")
 
@@ -173,13 +173,14 @@ async def confirm_note(request: SaveNoteSchema):
     if caixa_atual < valor_centavos:
         raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail="Saldo insuficiente.")
 
+
     note = await Nota.create(
         data=data_formatada,
         valor=valor_centavos,
         descricao=request.descricao,
         codigo_categoria=category,
         codigo_usuario=user,
-        id_planilha=sheet,
+        planilha_id=sheet.id,
         url_image_original=request.url_image_original,
         url_image_scan=request.url_image_scan,
     )
@@ -187,7 +188,7 @@ async def confirm_note(request: SaveNoteSchema):
     user.caixa -= valor_centavos
     await user.save()
 
-    return {"id": note.id, "message": "Nota salva com sucesso!"}
+    return {"message": "Nota salva com sucesso!"}
 
 @router.post("/reject")
 async def reject_note(request: RejectNoteSchema):
