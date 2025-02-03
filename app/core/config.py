@@ -3,23 +3,19 @@ import os
 
 load_dotenv()
 
-DB_USER = os.getenv('DB_USER')
-DB_PASSWORD = os.getenv('DB_PASSWORD')
-DB_HOST = os.getenv('DB_HOST')
-DB_PORT = int(os.getenv('DB_PORT'))
-DB_NAME = os.getenv('DB_NAME')
+DATABASE_URL = os.getenv('DATABASE_URL')
 
 TORTOISE_ORM = {
     'connections': {
-        'default': f"postgres://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}",
+        'default': DATABASE_URL,
     },
     'apps': {
         'models': {
-            'models': [os.getenv('TORTOISE_ORM_MODELS')],
+            'models': ['app.models'],
             'default_connection': 'default',
         },
         'aerich': {
-            'models': [os.getenv('TORTOISE_ORM_AERICH_MODELS')],
+            'models': ['aerich.models'],
             'default_connection': 'default',
         },
     },

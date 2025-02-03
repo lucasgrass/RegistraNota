@@ -17,16 +17,8 @@ services:
       - "8000:8000"
     depends_on:
       - registranota_database
-    volumes:
-      - ./app:/app
     environment:
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_HOST=${DB_HOST_DOCKER}
-      - DB_PORT=${DB_PORT}
-      - DB_NAME=${DB_NAME}
-      - TORTOISE_ORM_MODELS=${TORTOISE_ORM_MODELS}
-      - TORTOISE_ORM_AERICH_MODELS=${TORTOISE_ORM_AERICH_MODELS}
+      - DATABASE_URL=${DATABASE_URL_DOCKER}
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}

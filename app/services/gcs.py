@@ -4,6 +4,7 @@ import uuid
 import os
 from dotenv import load_dotenv
 from fastapi import HTTPException, status
+from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -52,4 +53,35 @@ def exclude_from_gcs(imagem_url: str):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao excluir imagem {imagem_caminho}: {str(e)}"
+        )
+    
+
+def generate_signed_url(blob_name: str, expiration: int = 30) -> str:
+    """
+    Gera uma URL assinada para um arquivo no Google Cloud Storage.
+
+    :param blob_name: Nome do arquivo (blob) no bucket.
+    :param expiration: Tempo de expiração da URL em minutos (padrão: 15 minutos).
+    :return: URL assinada.
+    """
+    try:
+        client = storage.Client()
+        bucket = client.get_bucket(BUCKET_NAME)
+        blob = bucket.blob(blob_name)
+
+        # Define o tempo de expiração
+        expiration_time = datetime.utcnow() + timedelta(minutes=expiration)
+
+        # Gera a URL assinada
+        signed_url = blob.generate_signed_url(
+            version="v4",
+            expiration=expiration_time,
+            method="GET",  # Ação permitida (GET para leitura)
+        )
+
+        return signed_url
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao gerar URL assinada: {str(e)}"
         )

@@ -1,11 +1,11 @@
-from fastapi import APIRouter, HTTPException, status, UploadFile, Form
+from fastapi import APIRouter, HTTPException, status, UploadFile, Form, Query
 from tortoise.exceptions import DoesNotExist
 from tortoise.transactions import atomic
 
 from app.core.security import validate_access_token
 from app.schemas import NoteSchema, UserNotesSchema, SaveNoteSchema, RejectNoteSchema, FilterNotesSchema
 from app.models import Nota, Usuario, Categoria, Planilha
-from app.services.gcs import upload_to_gcs, exclude_from_gcs
+from app.services.gcs import upload_to_gcs, exclude_from_gcs, generate_signed_url
 from app.services.scan import execute_scan
 from datetime import datetime, timedelta
 
@@ -73,6 +73,32 @@ async def filter_notes(request: FilterNotesSchema):
         "codigo_planilha": request.codigo_planilha,
         "notes": notes or []
     }
+
+@router.post("/signed-url")
+async def get_signed_url(
+    access_token: str = Form(...),
+    blob_name: str = Form(...)
+):
+    """
+    Gera e retorna uma URL assinada para um arquivo no Google Cloud Storage.
+    """
+    # Valida o token de acesso
+    codigo_usuario = await validate_access_token(access_token)
+
+    # Verifica se o usuário existe
+    user_exists = await Usuario.filter(codigo_usuario=codigo_usuario).exists()
+    if not user_exists:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
+
+    try:
+        # Gera a URL assinada
+        signed_url = generate_signed_url(blob_name)
+        return {"signed_url": signed_url}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao gerar URL assinada: {str(e)}"
+        )
 
 @router.post("/count")
 async def count_notes(request: UserNotesSchema):
